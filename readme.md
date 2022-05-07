@@ -30,7 +30,9 @@ consists of nodes that were approximately equivalent -- if we can't find a
 corresponding edge, then the cost should be the absolute value of the weight
 of Gref's edge.
 
-## Implementation Steps
+## Implementation Ideas
+
+### First Version
 
 1. "Sweep" around every node in Gref with radius R, and look for the closest node
 in Gcmp. If the closest node falls within some equivalence radius (which is
@@ -44,3 +46,14 @@ insertion and add that to the cost.
 
 3. Compute the edge distance using the equivalence mapping to find corresponding
 edges in Gcmp, if they exist, and update the weights correspondingly.
+
+### Second Version
+
+- For every node in Gcmp, search for partners in Gref
+    - If we have a close partner within *equivalency radius*, then we have equivalence
+    - If we have a partner within the *search radius*, then we have substitution
+    - No partner means deletion
+- Number of nodes to insert = Number of Gref nodes - (Number of equivalence + Number of substituted nodes)
+- Use equivalency mapping to find edge weights and compute edge distance
+- Trace operations performed in order to synthesize animation (?) transforming Gcmp into Gref
+    - Alternatively, just mutate Gcmp along the way
