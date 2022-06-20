@@ -5,7 +5,7 @@ import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
 from dataclasses import dataclass
-from typing import Union
+# from typing import Union
 from copy import deepcopy
 
 
@@ -29,7 +29,10 @@ def graph_compare(gcmp, gref, ins_cost, sub_rad, eq_rad,  transform=False):
     # Node Score
     
     for n in gcmp.nodes(data=True):
-        closest = min(gref.nodes(data=True), key=lambda m: dist(m, n), default=np.array([np.inf,np.inf,np.inf])) # if gref is empty, default value returned is node at infinity
+        closest = min(gref.nodes(data=True), 
+                      key=lambda m: dist(m, n),
+                      default=np.array([np.inf,np.inf,np.inf])) # if gref is empty, default value returned is node at infinity
+        
         d = dist(n, closest)
         print(f"{d=}")
 
