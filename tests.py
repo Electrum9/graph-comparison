@@ -6,6 +6,7 @@ import siminet as sn
 import networkx as nx
 import numpy as np
 from copy import deepcopy
+import matplotlib.pyplot as plt
 
 
 def one_empty(impl, constants):
@@ -19,8 +20,12 @@ def one_empty(impl, constants):
 
     expected = (2*constants["ins_cost"], nonempty.edges[1,2]["weight"]) # (insertion cost for 2 nodes, abs(weight of edge))
     
-    print(f"{impl(empty, nonempty, **constants)=}")
-    assert impl(gcmp=empty, gref=nonempty, **constants) == expected
+    # print(f"{impl(empty, nonempty, **constants)=}")
+    return {'gcmp': empty,
+            'gref': nonempty,
+            'result': impl(deepcopy(empty), nonempty, **constants)
+            }
+    # assert impl(gcmp=empty, gref=nonempty, **constants) == expected
 
 def same(impl, constants):
     nonempty = nx.Graph()
@@ -33,7 +38,7 @@ def same(impl, constants):
     print(f"{impl(nonempty, nonempty, **constants)=}")
     assert impl(nonempty, nonempty, **constants) == (0,0)
 
-def upwards(impl, constants, translation_type='eq'):
+def upwards(impl, constants, length=10, translation_type='eq'):
     """
     Subjects implementation to a path graph consisting of nodes that lie along a line in space,
     and a similar graph lying along a parallel line in space. Based on the string passed to
@@ -48,10 +53,10 @@ def upwards(impl, constants, translation_type='eq'):
     The edges are all of the same lengths in both graphs, for now.
     """
     
-    dir = np.random.rand(3)
+    dir = np.random.rand(2)
     print(f"{dir=}")
     # dir = np.array([1,1,1], dtype='float64') # direction vector for line
-    gref = nx.path_graph(10)
+    gref = nx.path_graph(length)
 
     for (i, n) in enumerate(gref.nodes):
         gref.nodes[n]["position"] = i*dir # scale direction vector by some amount
@@ -69,11 +74,15 @@ def upwards(impl, constants, translation_type='eq'):
     k = k_map[translation_type]
     
     print(f"{k=}")
-    offset = np.cross(np.array([1,0,0]), dir) # scales a vector perpendicular to the direction vec and [1,0,0]
-    offset /= np.linalg.norm(offset)
-    offset *= k
+    horizontal = np.zeros(dir.size)
+    horizontal[0] = dir[0]
+    offset = horizontal - (np.dot(horizontal, dir) / np.dot(dir, dir)) * dir
+    # offset = np.cross(np.array([1,0]), dir) # scales a vector perpendicular to the direction vec and [1,0]
+    # offset /= np.linalg.norm(offset)
+    offset *= k / np.linalg.norm(offset) # now set to vector that is orthogonal to dir, with magnitude k
     
     print(f"{offset=}")
+    print(f"{np.dot(offset, dir)=}")
 
     gnew = deepcopy(gref)
     for n in gnew.nodes:
@@ -82,14 +91,42 @@ def upwards(impl, constants, translation_type='eq'):
     # breakpoint()
         
 
-    expected = {'eq': 0,
-                'sub': np.linalg.norm(offset) * len(gref.nodes),
-                'out': constants['ins_cost'] * len(gref.nodes),
+    expected = {'eq': 0, # no cost
+                'sub': np.linalg.norm(offset) * len(gref.nodes), # Use Euclidean distance for substitution cost
+                'out': 2 * constants['ins_cost'] * len(gref.nodes), # insertion and deletion occurs, so 2x the cost
                }
 
-    print(f"{impl(gnew, gref, **constants)=}")
+    result = impl(gnew, gref, **constants)
+    print(f"{result=}")
     print(f"{expected[translation_type]=}")
     # assert impl(gnew, gref, **constants) == (expected[translation], 0)
+
+    if len(result) == 3: # means we also transformed a graph along the way
+        gref_positions = nx.get_node_attributes(gref, "position")
+        gnew_positions = nx.get_node_attributes(gnew, "position")
+        res_positions = nx.get_node_attributes(result[-1], "position")
+        
+        # TODO: Plot Gref, Gcmp, and Result with labels
+        nx.draw(gref, gref_positions, node_color="r")
+        plt.plot()
+        plt.title("Gref")
+        
+        nx.draw(gnew, gnew_positions, node_color='g')
+        plt.plot()
+        #plt.title("Gcmp")
+        # plt.show()
+        
+        nx.draw(result[-1], res_positions, node_color='b', node_size=150)
+        plt.plot()
+        #plt.title("Result")
+        plt.show()
+        
+    
+    return {'gcmp': gnew,
+            'gref': gref,
+            'result': result
+            }
+    # assert impl(gcmp=empty, gref=nonempty, **constants) == expected
 
 def bigger(impl, constants):
     g = None
