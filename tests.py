@@ -162,10 +162,10 @@ def main():
     constants = gen_constants(0.5)
 
     tests = [one_empty,
-			 same,
-			 wrapped_partial(upwards, translation_type='eq'),
-			 wrapped_partial(upwards, translation_type='sub'),
-			 wrapped_partial(upwards, translation_type='out'),
+             same,
+	     wrapped_partial(upwards, translation_type='eq'),
+             wrapped_partial(upwards, translation_type='sub'),
+             wrapped_partial(upwards, translation_type='out'),
             ]
 
     results = map(lambda t: (t.__name__, t(impl, constants)), tests)
