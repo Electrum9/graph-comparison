@@ -26,7 +26,7 @@ def graph_compare(gcmp, gref, ins_cost, sub_rad, eq_rad, score=None, transform=F
     if score is None: # scoring function, using the node/edge scores and the two graphs
         score = lambda n,e, gc, gr: (n,e) # default just returns back the node and edge scores
         
-    copy = nx.empty()
+    copy = nx.empty_graph()
     
     if transform: 
         copy = deepcopy(gcmp) # ensures that we don't mutate what was passed in

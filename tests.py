@@ -7,7 +7,16 @@ import networkx as nx
 import numpy as np
 from copy import deepcopy
 import matplotlib.pyplot as plt
+from functools import partial, update_wrapper
 
+
+def gen_constants(eq_rad):
+    """ Generates a set of constants based on the given equivalency radius."""
+    constants = {'ins_cost': 1,
+                 'eq_rad': eq_rad,
+                 'sub_rad': 1.5*eq_rad}
+
+    return constants
 
 def one_empty(impl, constants):
     empty = nx.Graph()
@@ -37,6 +46,11 @@ def same(impl, constants):
 
     print(f"{impl(nonempty, nonempty, **constants)=}")
     assert impl(nonempty, nonempty, **constants) == (0,0)
+    
+    return {'gcmp': nonempty,
+            'gref': nonempty,
+            'result': impl(deepcopy(nonempty), nonempty, **constants)
+            }
 
 def upwards(impl, constants, length=10, translation_type='eq'):
     """
@@ -128,12 +142,36 @@ def upwards(impl, constants, length=10, translation_type='eq'):
             }
     # assert impl(gcmp=empty, gref=nonempty, **constants) == expected
 
-def bigger(impl, constants):
-    g = None
-    assert True
+# def bigger(impl, constants):
+#     g = None
+#     assert True
+
+def test_results(testname, res):
+    header = testname + '\n' + '-' * (2*len(testname))
+    body = '\n'.join(f"  - {k}: {v}" for (k, v) in res.items())
+
+    return header + '\n' + body
+    
+def wrapped_partial(func, *args, **kwargs):
+    partial_func = partial(func, *args, **kwargs)
+    update_wrapper(partial_func, func)
+    return partial_func
 
 def main():
-    pass
+    impl = sn.graph_compare
+    constants = gen_constants(0.5)
+
+    tests = [one_empty,
+			 same,
+			 wrapped_partial(upwards, translation_type='eq'),
+			 wrapped_partial(upwards, translation_type='sub'),
+			 wrapped_partial(upwards, translation_type='out'),
+            ]
+
+    results = map(lambda t: (t.__name__, t(impl, constants)), tests)
+    report = '\n'.join(test_results(*args) for args in results)
+
+    print(report)
 
 if __name__=="__main__":
     main()
