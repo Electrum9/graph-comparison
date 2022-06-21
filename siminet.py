@@ -3,17 +3,30 @@
 # Description: Implementation of siminet algorithm in Python (second version)
 import networkx as nx
 import numpy as np
-import matplotlib.pyplot as plt
-from dataclasses import dataclass
-# from typing import Union
+# import matplotlib.pyplot as plt
 from copy import deepcopy
 
 
-def graph_compare(gcmp, gref, ins_cost, sub_rad, eq_rad,  transform=False):
+def max_cost_score(node_score, edge_score, gcmp, gref):
+    """
+    Scoring function that normalizes the sum of the node score and edge score with
+    the maximum possible such score  -- which is the sum of maximum insertion cost and maximum deletion cost.
+    """
+    max_insertion_cost = len(gref.nodes) + len(gref.nodes)
+    max_deletion_cost = len(gcmp.nodes) + len(gcmp.nodes)
+
+    return (node_score + edge_score) / (max_insertion_cost + max_deletion_cost)
+
+def graph_compare(gcmp, gref, ins_cost, sub_rad, eq_rad, score=None, transform=False):
     """
     Intakes two graphs, gcmp and gref, and computes the node and edge distances b/w them as per the Siminet algorithm.
     transform will transform a copy of gcmp during the course of the function if set to true (for testing purposes).
     """
+    
+    if score is None: # scoring function, using the node/edge scores and the two graphs
+        score = lambda n,e, gc, gr: (n,e) # default just returns back the node and edge scores
+        
+    copy = nx.empty()
     
     if transform: 
         copy = deepcopy(gcmp) # ensures that we don't mutate what was passed in
@@ -86,6 +99,7 @@ def graph_compare(gcmp, gref, ins_cost, sub_rad, eq_rad,  transform=False):
 
     
     if transform:
-        return (node_score, edge_score, copy)
+        return score(node_score, edge_score, gcmp, gref), copy
     
-    return (node_score, edge_score)
+    # normalization function passed in, by default it is the identity function
+    return score(node_score, edge_score, gcmp, gref)
