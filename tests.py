@@ -45,7 +45,7 @@ def same(impl, constants):
     nonempty.add_edge(1, 2, weight=1)
 
     print(f"{impl(nonempty, nonempty, **constants)=}")
-    assert impl(nonempty, nonempty, **constants) == (0,0)
+    # assert impl(nonempty, nonempty, **constants) == (0,0)
     
     return {'gcmp': nonempty,
             'gref': nonempty,
@@ -115,7 +115,7 @@ def upwards(impl, constants, length=10, translation_type='eq'):
     print(f"{expected[translation_type]=}")
     # assert impl(gnew, gref, **constants) == (expected[translation], 0)
 
-    if len(result) == 3: # means we also transformed a graph along the way
+    if type(result) == tuple:
         gref_positions = nx.get_node_attributes(gref, "position")
         gnew_positions = nx.get_node_attributes(gnew, "position")
         res_positions = nx.get_node_attributes(result[-1], "position")
@@ -152,14 +152,25 @@ def test_results(testname, res):
 
     return header + '\n' + body
     
+variants = dict() # keeps track of partially applied variants of a function, so we can label them differently
+
 def wrapped_partial(func, *args, **kwargs):
     partial_func = partial(func, *args, **kwargs)
     update_wrapper(partial_func, func)
+
+    if (n:=func.__name__) not in variants:
+        variants[n] = 0
+
+    variants[n] += 1
+
+    partial_func.__name__ += str(variants[n])
+    
     return partial_func
 
 def main():
     impl = sn.graph_compare
     constants = gen_constants(0.5)
+    constants["score"] = sn.max_cost_score
 
     tests = [one_empty,
              same,
@@ -169,8 +180,9 @@ def main():
             ]
 
     results = map(lambda t: (t.__name__, t(impl, constants)), tests)
-    report = '\n'.join(test_results(*args) for args in results)
+    report = ('\n'*2).join(test_results(*args) for args in results)
 
+    print('\n'*2 + "Tests:" + '\n'*2)
     print(report)
 
 if __name__=="__main__":
